@@ -22,7 +22,6 @@ class Package:
         self.delivery_time = delivery_time
 
     #Debug:: adding a method to allow printing of object contents for Debugging purposes
-
     def __repr__(self):
         return (f" {self.id_package}, {self.address}, {self.city}, {self.state}, {self.zip_code},"
                 f"{self.delivery_deadline}, {self.weight}, {self.special_notes}, {self.status}," 

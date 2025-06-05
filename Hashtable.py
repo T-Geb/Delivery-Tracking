@@ -3,9 +3,10 @@
 
 class Hashtable:
 
-    # creating the constructor for the hashtable with a size of 40 to take the 40 package values and assign each index with None.
-    def __init__(self, size = 40):
-        self.hash_list = [None] * size   #FIX making sure the hashtable has enough space using the 7/10 rule
+    # Creating the constructor for the hashtable with a size of 59 to store the 40 packages
+    # Hashtable size = 59, a prime number for good hash and to keep the load factor <= 0.7 if more packages are added
+    def __init__(self, size = 59):
+        self.hash_list = [None] * size
 
 # defining the hash function using the modulo operator
     def hash(self,key):
@@ -42,8 +43,6 @@ class Hashtable:
             if pair[0] == key:   # if key at index 0 is equal to the key passed,
                 print("Matched")
                 return pair[1]   # return the value that is at index 1
-            else:
-                return None
         return None
 
 

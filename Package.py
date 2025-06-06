@@ -20,6 +20,7 @@ class Package:
         self.status = status
         self.departure_time = departure_time
         self.delivery_time = delivery_time
+        self.address_index = None # to be used to access the distance matrix
 
     #Debug:: adding a method to allow printing of object contents for Debugging purposes
     def __repr__(self):

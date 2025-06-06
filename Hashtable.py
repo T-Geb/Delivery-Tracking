@@ -39,9 +39,9 @@ class Hashtable:
         if bucket is None:  # if bucket at that index is empty, return None
             return None
         for pair in bucket: # for the items in the bucket, key & Value
-            print("Checking pair:", pair)
+            # print("Checking pair:", pair)
             if pair[0] == key:   # if key at index 0 is equal to the key passed,
-                print("Matched")
+                # print("Matched")
                 return pair[1]   # return the value that is at index 1
         return None
 

@@ -1,3 +1,4 @@
+from datetime import timedelta
 
 
 class Trucks:
@@ -10,10 +11,12 @@ class Trucks:
         self.truck_id = truck_id
         self.packages = []   # to store a list of package objects
         self.total_miles = 0.0  # to keep track of the distance traveled
+        self.start_time = timedelta(hours=8) # default time : for managing truck's start time
+        self.return_time = 0.0
 
-# a method to add packages to trucks. It makes sure that the max load of the truck, 16 is not exceeded
     def add_package(self, package):
         if len(self.packages) < Trucks.max_load:
             self.packages.append(package)
         else:
             print(f"Truck {self.truck_id} is full, cannot add package{package.id_package}")
+

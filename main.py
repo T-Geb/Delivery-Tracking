@@ -149,9 +149,8 @@ def nearest_neighbor(truck,start_time = timedelta(hours=8)):
     return current_time  #returning the time the truck finished delivering, to be used for truck assignment : truck 3
 
 #Time Complexity: O(N^2) : due to the nearest_neighbor calls that are O(N^2)
-"""Delivery Simulation that parses input files, create three trucks, load them with pre-selected package-ID lists, 
-assigns trucks, load trucks using a manually specified list of package ids, and 
-calls the nearest_neighbor routes while making sure constraints such as delayed flights and address correction at 10:20 am
+"""Delivery Simulation that parses input files, create three trucks,assigns trucks, load them with pre-selected package-ID lists,
+ and calls the nearest_neighbor routes while making sure constraints such as delayed flights and address correction at 10:20 am
 are met"""
 def run_delivery():
 

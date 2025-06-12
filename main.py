@@ -1,26 +1,24 @@
+# C950 Data Structures and Algorithms II
 import csv
-from datetime import datetime, timedelta
-from sys import excepthook
+from datetime import timedelta
+
 
 from Hashtable import Hashtable
 from Package import Package
 from Trucks import Truck
 
-hash_table = Hashtable()
+hash_table = Hashtable() #initializing hashtable
 address_dict = {}  # creating an empty dictionary list for storing addresses. Chose dictionary over list because of O(1) read and search
-distance_matrix = [] #Defining Distance Matrix
-# corrected_p9 = False  # flagging package 9 correction
+distance_matrix = [] #Defining Distance Matrix for distance lookup
 
-# a method to read the csv file and parse for loading into the hash table
-    # Time Complexity: Big O -- O(n) due to the for loop implemented to parse through the csv file
-def parse_package_data(hash_table):
-    #print("Parsing Package Data")  ##Debug
+# Time Complexity: O(n) due to the for loop implemented to parse through the csv file
+# a method to read the csv file and parse for loading into the hash table by using key - package id and value - package object
+def parse_package_data():
     # using csvreader to parse through the csv file
     with open('package_data.csv', 'r') as csv_package_file:
         csv_reader = csv.reader(csv_package_file, delimiter=',')
         next(csv_reader) # to make sure the first line containing headers is skipped
-        for row in csv_reader:
-            ##editing for rubric requirement of no class usage:
+        for row in csv_reader: #for each row in the csv file, assign them to package objects
             id_package = int(row[0])
             address = row[1]
             city = row[2]
@@ -33,44 +31,38 @@ def parse_package_data(hash_table):
             # passing the parsed data into the package object as attributes
             package = Package(id_package, address, city, state, zip_code, delivery_deadline, weight,special_notes)
 
-                # we're passing the id_package as key and package object as value.
-                #we're calling an insert function that is implemented in the hash table class.
+            # Passing the id_package as key and package object as value.
+            # Calling an insert function that is implemented in the hash table class to add each key-value pair to hashtable
             hash_table.insert(id_package, package) # key - package ID, value = Package object
-# Pre-algorithm steps:
 
+#Time Complexity: O(n) due to the for loop implemented to parse through the csv file
 # parsing address.csv file to create the address_dict lookup table
-def parse_address_data(address_dict):
+def parse_address_data():
     with open('address.csv', 'r') as csv_package_file:
         csv_reader = csv.reader(csv_package_file, delimiter=',')
         for row in csv_reader:
             index = int(row[0]) # converting each first value of each row into an int that can be used as index
-            address = row[2].strip()    # getting the address from the csv and removing whitespace
+            address = row[2].strip()    # getting the address from the csv-located at index 2, and removing whitespace
             address_dict[address] = index # putting the address into the dictionary
-            #this stores the address as Key and the index as value, because we want to look up by address to get the index
+            #this stores the address as Key and the index as value, because we want to look up by address to get the index for distance lookup
 
         return address_dict
 
-#DEBUG method to check proper address dictionary population
-def printing_addresses(address_dict):
-    for address, index in address_dict.items():
-        print(f"Index {index}: {address}")
-
-
-def parse_distance_data(distance_data):
+#Time Complexity: O(n) due to the for loop implemented to parse through the csv file
+#parsing distance.csv file and adding it to the distance_matrix
+def parse_distance_data():
     with open('distance.csv', 'r') as csv_package_file:
         csv_reader = csv.reader(csv_package_file, delimiter=',')
         for row in csv_reader:
             distance_matrix.append(row)
     return distance_matrix
 
-def print_distance_data(distance_matrix):      #DEBUGGING Print method to check Distance Matrix population
-    for index, distance in enumerate(distance_matrix):
-        print(f"Distance {index}: {distance}")
-
-# a method to load truck
-def load_truck(truck, hash_table, list_package_ids):
-    for package_id in list_package_ids:  #package_ids is a manually made list that contains the packages that should go on each truck
-        package = hash_table.lookup(package_id) # looking up the package id in the hashtable and assigning it to package object
+#Time Complexity: O(n) due to the for loop implemented to loop through the list of package id's
+"""load_truck method looks up each package ID from the package list in the hashtable and load it onto the given truck and 
+sets package status by applying constraints"""
+def load_truck(truck, list_package_ids):
+    for pkg_id in list_package_ids:  #package_ids is a manually made list that contains the packages that should go on each truck
+        package = hash_table.lookup(pkg_id) # looking up the package id in the hashtable and assigning it to package object
         if package is not None:
             truck.add_package(package)## if found, then add the package to the truck
             if package.id_package in (6, 25, 28, 32):  ## setting status for the delayed packages and for regular packages
@@ -78,10 +70,10 @@ def load_truck(truck, hash_table, list_package_ids):
             else:
                 package.status = "At the hub" # package loaded at the hub
             package.truck_id = truck.truck_id
-            # print(f"Loaded package {package_id} onto truck {truck.truck_id}")
-        # else:
-            # print(f" Package {package_id} not found") # if no package exists
 
+#Time Complexity: O(1)
+"""A method to return a distance between two addresses by translating them to indices by using the address_dict and reading 
+distance matrix"""
 def get_distance(starting_address, ending_address):
     #address dict takes the address as key and returns the index as value
     start_index = address_dict[starting_address.strip()]
@@ -92,29 +84,29 @@ def get_distance(starting_address, ending_address):
         distance = distance_matrix[end_index][start_index]  #checking the other side
     return float(distance)
 
+#Time Complexity: O(1) - hashtable lookup
+"""A method to update package 9's address at 10:20 am and also defines dynamic variables to flag package 9 as corrected
+and to store the correction time for report generation"""
 def update_package9_address(current_time):
-    # global corrected_p9
     if current_time >= timedelta(hours=10,minutes=20):
         package_9 = hash_table.lookup(9)
         package_9.address = "410 S State St" # assigning correct address
         package_9.zip_code = "84111"
         package_9.special_notes = "Address Correction Made"  # replacing special note about wrong address
-        print(f"Updating Package 9: {package_9}")
-        print(f"Package 9 : Current time: {current_time}")
-        # corrected_p9 = True #only correct package 9 once
         #hashtable stores reference to the package object, so we can access these new additions from the hashtable.
         package_9.address_corrected = True  # to track if address 9 was corrected
-        package_9.correction_time = current_time
+        package_9.correction_time = current_time # storing correction time
 
+#Algorithm: Nearest Neighbor
+#Time Complexity: O(N^2) - due to the nested loops
+"""The algorithm takes a truck start time, keeps a list of undelivered packages, repeatedly selects nearest address,
+updates each package's status, delivery time, and the truck's mileage. 
+The method returns the truck's arrival time back at the hub."""
 def nearest_neighbor(truck,start_time = timedelta(hours=8)):
     undelivered_packages = list(truck.packages)  #create a list to track if a truck has any undelivered packages
     current_location = "4001 South 700 East"  #assign the starting location, the HUB
-    # print(f"Current location: {current_location}")  ##DEBUG
     current_time = start_time
 
-    print(f"Truck {truck.truck_id} starting at {current_time}") ##DEBUG
-
-    print(f" Truck {truck} Current time: {current_time}")  ##DEBUG
     while undelivered_packages:   #while we still have undelivered packages:
         min_distance = float('inf')  # assigning min distance to infinity so the first package is immediately assigned minimum distance.
         nearest_package = None
@@ -125,68 +117,107 @@ def nearest_neighbor(truck,start_time = timedelta(hours=8)):
                 #only update when we find something closer
                 min_distance = distance
                 nearest_package = package  #hashtable look up already done when loading trucks
-                # print(f"Distance: {min_distance}") #DEBUG print
         if nearest_package is not None:
 
-            print(f"Nearest Package Status : {nearest_package.status}")
-            print(f"Nearest Package id : {nearest_package.id_package}")
-            nearest_package.status = "En route"  # package on the way
+            nearest_package.status = "En route"  # status update: package on the way
+
             #calculating travel time
             travel_time_minutes = (min_distance/18.0) * 60   #Calculate the distance in minutes based on the trucks speed - 18 mph
             travel_time = timedelta(minutes=travel_time_minutes)
 
             current_time += travel_time #updating current time
-            print(f"Nearest Neighbor {nearest_package.id_package} is {nearest_package.address}")
-
 
             nearest_package.delivery_time = current_time # setting package delivery time
             nearest_package.start_time = start_time # for status lookup
 
-            truck.truck_miles += min_distance
+            truck.truck_miles += min_distance #saving truck miles
 
-            # moving the current location indicator to the nearest address we're working with
+            # assigning the nearest location as the current location
             current_location = nearest_package.address
-            # print(f"Current location after delivering: {current_location}") #Debug Print
 
             #Removing the delivered package from the undelivered_list
             undelivered_packages.remove(nearest_package)
 
-            #updating status:
+            #updating status once package is delivered
             nearest_package.status = "Delivered"
-            # print(f"Delivered Package {nearest_package.id_package} at {current_time}")#Debug print
-            print(f"Nearest Status {nearest_package.id_package} is {nearest_package.status}")
 
     distance_to_hub = get_distance(current_location, "4001 South 700 East") #calulating our return trip distance
-    print(f"Distance to hub: {distance_to_hub}")
     truck.truck_miles += distance_to_hub   #Tracking total miles traveled thus far.
-    print(f"Total miles: {truck.truck_miles}")
-    # travel_time_minutes =   #recalculating travel minutes to include travel to hub
     travel_time_hub = timedelta(minutes=((distance_to_hub/18.0) * 60) )
-    current_time += travel_time_hub# adding travel_time_hub to the current time
-    print(f"Current time After Delivery of {truck.truck_id} {current_time}")
-    # print(f"Returned to HUB at {current_time}")
+    current_time += travel_time_hub #adding travel_time_hub to the current time
     truck.return_time = current_time # setting truck return time
-    return current_time
+    return current_time  #returning the time the truck finished delivering, to be used for truck assignment : truck 3
+
+#Time Complexity: O(N^2) : due to the nearest_neighbor calls that are O(N^2)
+"""Delivery Simulation that parses input files, create three trucks, load them with pre-selected package-ID lists, 
+assigns trucks, load trucks using a manually specified list of package ids, and 
+calls the nearest_neighbor routes while making sure constraints such as delayed flights and address correction at 10:20 am
+are met"""
+def run_delivery():
+
+    #reading data csv files
+    parse_package_data()
+    parse_address_data()
+    parse_distance_data()
+
+    ##instantiating truck objects and assigning truck_id
+    truck1 = Truck(truck_id=1)
+    truck2 = Truck(truck_id=2)
+    truck3 = Truck(truck_id=3)
+
+    """Preparing a list of packages to load onto trucks. using manual method:
+    Special notes were taken into account on which packages go together based same address, restrictions
+    such as, can only be on truck 2 and the delayed on flight"""
+    truck1_packages = [1, 4, 7, 8, 13, 14, 15, 16, 19, 20, 21, 29, 30, 34, 39,
+                       40]  # added normal packages + packages with earlier delivery deadline
+    truck2_packages = [3, 5, 6, 18, 25, 26, 27, 31, 32, 35, 36, 37,
+                       38]  # added normal packages + packages that can only go on truck 2 + delayed packages
+    truck3_packages = [2, 9, 10, 11, 12, 17, 22, 23, 24, 28,
+                       33]  # added normal packages + delayed on flight + package 9 - wrong address
 
 
+    # Truck 1 starts at the default time 8:00am
+    load_truck(truck1, truck1_packages)  # loading truck 1
+    truck1_delivery = nearest_neighbor(truck1)  # running the nearest neighbor algorithm, truck 1 starting at default time 8:00 am
 
-#method to print information for one package at a specific time
-def print_package_status(id_package, query_time):
+    # truck 2 starts at 09:05: waiting for the delayed packages to arrive at 9:05am
+    truck2.start_time = timedelta(hours=9, minutes=5)
+    load_truck(truck2, truck2_packages)  # loading truck 2
+    nearest_neighbor(truck2,truck2.start_time) #run nearest_neighbor for truck 2
+
+    # Truck 3 starts at >= 10:20am based on the given constraint for package 9 and truck 1's return time
+    load_truck(truck3, truck3_packages) #loading truck 3
+    # truck 3 waits until truck 1 returns...and until it's 10:20 so package 9 can get updated
+    truck3.start_time = max(truck1_delivery, timedelta(hours=10, minutes=20))
+    update_package9_address(truck3.start_time)  # calling a method to update package 9 at 10:20am
+    nearest_neighbor(truck3, truck3.start_time) # run nearest_neighbor for truck 3
+
+    # After truck 3 is done, all packages are expected to be delivered.
+
+    return { #returning each truck object as a dictionary list to be used for the print function.
+        "trucks_dict": {1: truck1, 2: truck2, 3: truck3}
+    }
+
+#Time Complexity - O(1) constant time lookups, comparisons and formatting
+"""A method to display full report for one package at a given query time, including corrected address logic for package 9.
+The report includes essential package information such as status, delivery time, truck ID, and more."""
+def print_package_report(id_package, query_time):
     package = hash_table.lookup(id_package)
-    #using the variables set in the update_package_9 method to check if the address is corrected and the correction time, then
-    #displaying the correct address based on that.
     display_address = package.address
 
+    #Address display logic for package 9 : checks if correction_time is set.
+    # and displays the original or corrected address accordingly
     if package.id_package == 9:
         if package.correction_time is None or query_time < package.correction_time: # The algorithm handles the package correction at 10:20
             display_address = "300 State St"  #showing original wrong address
         else:
-            display_address = "410 S State St"
+            display_address = "410 S State St" # showing corrected address if the correction has happened
 
-#showing delivery status based on the algorithms recording of delivery time and
+    # Package status logic: determine status based on package delivery_time and start_time
+    # including special handling for delayed packages(IDs 6,25,28,32)
     if package.delivery_time is not None and query_time >= package.delivery_time:
         status= f"Delivered at {package.delivery_time}"
-    elif (package.id_package in (6,25,28,32) and  #making sure the delayed packages are marked are shown as delayed by using the delivery's start time as a measure
+    elif (package.id_package in (6,25,28,32) and  #making sure the delayed packages are marked and shown as delayed by using the delivery's start time as a measure
           package.start_time is not None and
           query_time < package.start_time):
         status = "Delayed"
@@ -195,115 +226,49 @@ def print_package_status(id_package, query_time):
     else:
         status = "En route"
 
+    # converting time objects to string for proper print display
     start_str = str(package.start_time)
     deliver_str = str(package.delivery_time)
-    # zip_str = str(package.zip_code)[:5]
-    # deadline_str = str(package.delivery_deadline)[:8]
 
-    # print(f" Truck ID: for Package {package.id_package} is {package.truck_id}")
-
+    # Printing report. Uses formatting for proper display
     print(f"{package.id_package:<5} {display_address:<40} {package.city:<20} {package.state:<10}"
-          f"{package.zip_code:<15} {package.delivery_deadline:<20} {start_str:<20} {status:<20} {deliver_str:<15}"
-          f"{package.truck_id:<6}")
+          f"{package.zip_code:<15} {package.delivery_deadline:<20} {start_str:<20} {status:<30} {deliver_str:<15}"
+          f"{package.truck_id:<6}  ")
 
-# method to print information of all packages at different query times
-def print_all_status(query_time, trucks_dict):
+#Time Complexity: O(N) - due to the for to look up each package id and call to the report
+"""A method to display report for all packages by looping through the package Id's 1-40 and calling the single package print
+method to print reports.
+The report also includes each truck's starting time, when the truck returned to hub, truck miles, and
+total miles traveled by all trucks"""
+def print_all_report(query_time, trucks_dict):
     print(f"\n--- Printing all package statuses at Query time: {query_time}")
     print(
         f"{'ID':<5} {'Address':<40} {'city':<20} {'State':<10}"
-        f"{'Zip-Code':<15} {'Deadline':<20} {'Departure Time':<20} {'Status':<20} {'Delivery Time':<15}"
-        f"{'Truck':<6}"
+        f"{'Zip-Code':<15} {'Deadline':<20} {'Departure Time':<20} {'Status':<30} {'Delivery Time':<15}"
+        f"{'Truck':<6}  "
     )
 
-    for id_package in range(1, 41):
-        package_status = hash_table.lookup(id_package)
-        print_package_status(package_status.id_package, query_time)
+    for id_package in range(1, 41):  #for packages with id 1-40
+        print_package_report(id_package, query_time) # call the package report method for each package
 
 
-    print(f"\nTruck 1 Miles: {trucks_dict[1].truck_miles:2f}")
-    print(f"\nTruck 2 Miles: {trucks_dict[2].truck_miles:2f}")
-    print(f"\nTruck 3 Miles: {trucks_dict[3].truck_miles:2f}")
+    # Adding print statements to display each trucks start time, when it returned to hub and truck miles
+    # the trucks_dict passed from the run_delivery method is used to access the truck attributes
+    print(f"\nTruck 1 Starting Time: {trucks_dict[1].start_time} and returned to hub at : {trucks_dict[1].return_time}")
+    print(f"Truck 1 Miles: {trucks_dict[1].truck_miles:.2f}")
 
-    print(f"\nTruck 1 started at: {trucks_dict[1].start_time} and finished delivering at : {trucks_dict[1].return_time}")
-    print(f"\nTruck 2 Starting Time: {trucks_dict[2].start_time} and Delivery Time: {trucks_dict[2].return_time}")
-    print(f"\nTruck 3 Starting Time: {trucks_dict[3].start_time} and Delivery Time: {trucks_dict[3].return_time}")
 
+    print(f"\nTruck 2 Starting Time: {trucks_dict[2].start_time} and returned to hub at : {trucks_dict[2].return_time}")
+    print(f"Truck 2 Miles: {trucks_dict[2].truck_miles:.2f}")
+
+    print(f"\nTruck 3 Starting Time: {trucks_dict[3].start_time} and returned to hub at : {trucks_dict[3].return_time}")
+    print(f"Truck 3 Miles: {trucks_dict[3].truck_miles:.2f}")
+
+
+    # Calculating total miles of all trucks
     total_miles = trucks_dict[1].truck_miles + trucks_dict[2].truck_miles + trucks_dict[3].truck_miles
-    print(f"\nTotal miles traveled by all trucks is {total_miles:2f} ")
+    print(f"\nTotal miles traveled by all trucks is {total_miles:.2f} ")
 
-def run_delivery():
-    parse_package_data(hash_table)
-    # hash_table.print_table()
-    #
-    # # print(os.getcwd())
-    # result = hash_table.lookup(39)  #add in check..if key not found...
-    # if result:
-    #     print("Lookup worked!")
-    # else:
-    #     print("Lookup failed.")
-    ## DEBUT for address list:
-    parse_address_data(address_dict)  #
-    # printing_addresses(address_dict)   # DEBUG : printing added addresses
-    parse_distance_data(distance_matrix)
-    # print_distance_data(distance_matrix)
-
-    ##loading trucks:
-    truck1 = Truck(truck_id=1)
-    truck2 = Truck(truck_id=2)
-    truck3 = Truck(truck_id=3)
-
-    # Preparing a list of packages to load onto trucks. using manual method:
-    # manually loaded each truck...Special notes were taken into account on which packages go together based same address, restrictions
-    # --such as can only be on truck 2 and the delayed on flight were added to truck 3
-    truck1_packages = [1, 4, 7, 8, 13, 14, 15, 16, 19, 20, 21, 29, 30, 34, 39,
-                       40]  # added normal packages + ones that need to go together
-    truck2_packages = [3, 5, 6, 18, 25, 26, 27, 31, 32, 35, 36, 37,
-                       38]  # added normal packages + packages that can only go on truck 2
-    truck3_packages = [2, 9, 10, 11, 12, 17, 22, 23, 24, 28,
-                       33]  # added normal packages + ones that go together + delayed on flight + package 9 - wrong address
-
-    # using a method to load the packages onto the trucks
-
-    # Truck 1 starts at the default time 8:00am
-    load_truck(truck1, hash_table, truck1_packages)
-    truck1_delivery = nearest_neighbor(truck1)  # take default start time : 8:00am
-    # print_all_status(timedelta(hours=8, minutes=50))  # printing status of packages at 8:50
-    print("Truck 1 Delivery ", truck1_delivery)
-
-    # truck 2 starts at 09:05: waiting for the delayed packages to arrive at 9:05am
-    truck2.start_time = timedelta(hours=9, minutes=5)
-    load_truck(truck2, hash_table, truck2_packages)
-    truck2_delivery = nearest_neighbor(truck2,
-                                       truck2.start_time)  # take start time 9:05am to account for delayed packages
-    # print_all_status(timedelta(hours=9, minutes=40))
-    print("Truck 2 Delivery ", truck2_delivery)
-
-    # Truck 3 starts at >= 10:20am depending on the given constraint for package 9 and truck 1's return time
-    load_truck(truck3, hash_table, truck3_packages)
-    # truck 3 waits until truck 1 returns...and until it's 10:20 so package 9 can get updated
-    truck3.start_time = max(truck1_delivery, timedelta(hours=10, minutes=20))
-    update_package9_address(truck3.start_time)  # calling a method to update package 9 at 10:20am
-    # DEBUG -- hash_table.lookup(9)
-    # DEBUG -- print(f"Package 9: {hash_table.lookup(9)}")
-    truck3_delivery = nearest_neighbor(truck3, truck3.start_time)
-     # 24-hour format 1:05
-    print("Truck 3 Delivery ", truck3_delivery)
-
-    # print_all_status(timedelta(hours=13, minutes=5))
-    # After truck 3 is done, all packages are expected to be delivered. This method prints out
-
-    print_package_status(6, timedelta(hours=9, minutes=38))
-
-    total_miles = truck1.truck_miles + truck2.truck_miles + truck3.truck_miles
-    print(f"Total miles: {total_miles}")
-    # package_28 = hash_table.lookup(28)
-    #
-    # print(f"Package 28 : {package_28}")
-    # print(f"Pkg 28 delivery time: {package_28.delivery_time}")
-
-    return { #returning each truck object as a dictionary list to be used for the print function.
-        "trucks_dict": {1: truck1, 2: truck2, 3: truck3}
-    }
 
 if __name__ == "__main__":
 
@@ -321,47 +286,57 @@ if __name__ == "__main__":
     print("\n2. View status report for a specific package at a specific time")
     print("\n3. Enter 3 to exit the system\n")
 
-
-
-    while True:
-        report_choice = input("\n\n\nEnter your choice to view report 1,2, or exit").strip()
+    while True: # while loop to allow for dynamic display of menu   Time-Complexity - O(N)
+        # taking user
+        report_choice = input("\n\n\nEnter your choice to view report 1,2, or exit:  \n\n\n").strip()
 
         if report_choice == "1":
             try:    #Using try and except to handle validation for proper time entry
                 time_input = input("Please Enter time to view report in format HH:MM: ").strip()
-                hours, minutes = map(int, time_input.split(":")) #splitting assigning hours and minutes by the : delimiter
+                hours, minutes = map(int, time_input.split(":")) #splitting hours and minutes by the : delimiter
+
+                #validation for proper time entry
                 if not(0 <= hours <= 23 and  0 <= minutes <= 59):
                     print("\n\nINVALID INPUT: Hours must be 0-23 and minutes must be 0-59\n\n")
                     continue
-                time_input = timedelta(hours=hours, minutes=minutes) # assigning back the hours and minutes as timedelta to time_input
-                print_all_status(time_input,trucks)
-            except ValueError:
+                time_input = timedelta(hours=hours, minutes=minutes) # assigning the hours and minutes as timedelta to time_input
+                print_all_report(time_input,trucks)  # calling all report printing method
+            except ValueError: #Validation
                 print("\n\nINVALID INPUT: Please use HH:MM format\n\n")
                 continue
 
         elif report_choice == "2":
             try:  #Using try and except to handle validation for proper time entry
                 package_id = int(input("Please Enter Package ID: 0-40").strip()) #converting package_id to integer for validation
-                if not(0 <= package_id <= 40):
+
+                if not(0 <= package_id <= 40):  #validation for package ID range
                     print("\n\nINVALID INPUT: Package IDs must be 0-40\n\n")
                     continue
+
                 time_input = input("Please Enter time to view report in format HH:MM:")
                 hours, minutes = map(int, time_input.split(":"))
-                if not(0 <= hours <= 23 and  0 <= minutes <= 59):
+
+                if not(0 <= hours <= 23 and  0 <= minutes <= 59): # validation for time entry
                     print("\n\nINVALID INPUT: Hours must be 0-23 and minutes must be 0-59\n\n")
                     continue
                 time_input = timedelta(hours=hours, minutes=minutes)
-                print_package_status(package_id, time_input)
+
+                print(  # print format
+                    f"{'ID':<5} {'Address':<40} {'city':<20} {'State':<10}"
+                    f"{'Zip-Code':<15} {'Deadline':<20} {'Departure Time':<20} {'Status':<30} {'Delivery Time':<15}"
+                    f"{'Truck':<6}  "
+                )
+                print_package_report(package_id, time_input) # calling single package report print method
             except ValueError:
                 print("\n\n***INVALID INPUT: Please enter valid numbers***\n\n")
                 continue
-        elif report_choice == "3":
+        elif report_choice == "3":   # exit
             print("\nThank you for using the delivery tracking system")
             break
         else:
             print("\nINVALID CHOICE: Please try again. Enter 1 - to view all package reports, "
                   "2 - to view specific package report, or 3 - to exit the system\n")
-1
+
 
 
 

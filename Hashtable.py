@@ -8,22 +8,16 @@ class Hashtable:
     def __init__(self, size = 59):
         self.hash_list = [None] * size
 
-# defining the hash function using the modulo operator
+   # defining the hash function using the modulo operator
     def hash(self,key):
         return key % len(self.hash_list)
 
-    ##Debug:: print function to test the hash table is properly populated
-    def print_table(self):
-        for pair in enumerate(self.hash_list):
-            if pair is not None:
-                print(pair)
-
-
+    #Time Complexity: Average Case - O(1), Worse Case - O(N) : if many collisions occur
+    """The insert uses inputs key-value pairs to find the bucket index and create a list "
+     at that bucket if the bucket is empty for linear probing"""
     def insert(self, key, value):
         index = self.hash(key)   #calling the hash function to calculate an index using the id_package
         bucket = self.hash_list[index]
-        #print("inserting", key, value)
-        #print(f"insert {key} into hashtable")
         if bucket is None:   #if the bucket at index is empty, create an empty list at that index #this is for separate chaining. If two package objects map to the same index, the value gets appended to the list.
             bucket = []    #creating a new list
             self.hash_list[index] = bucket  # connecting the hashtable to the new list
@@ -31,7 +25,9 @@ class Hashtable:
         # we don't need to pass the whole package value..that is done in main method..
         bucket.append([key, value])    # inserting the key value pair at the bucket
 
-# look up method that takes tha id_package and returns the values
+
+    #Time Complexity: Average Case - O(1), Worst Case - O(N) : if many collisions occur
+    # The lookup method takes a package id as input to use as key and returns the values, package objects
     def lookup(self, key):
         index = self.hash(key)  # calling hash method to calculate the bucket index using the hash function
         bucket = self.hash_list[index]  # grabbing the bucket at that index

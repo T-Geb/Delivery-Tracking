@@ -1,8 +1,7 @@
-# C950 Data Structures and Algorithms II
+# C950 Data Structures and Algorithms II  
+
 import csv
 from datetime import timedelta
-
-
 from Hashtable import Hashtable
 from Package import Package
 from Trucks import Truck
@@ -58,13 +57,13 @@ def parse_distance_data():
     return distance_matrix
 
 #Time Complexity: O(n) due to the for loop implemented to loop through the list of package id's
-"""load_truck method looks up each package ID from the package list in the hashtable and load it onto the given truck and 
-sets package status by applying constraints"""
+"""load_truck method looks up each package ID from the package id list by using the hashtable lookup method,
+loads it onto the given truck's package list from truck class and sets package status by applying constraints"""
 def load_truck(truck, list_package_ids):
-    for pkg_id in list_package_ids:  #package_ids is a manually made list that contains the packages that should go on each truck
-        package = hash_table.lookup(pkg_id) # looking up the package id in the hashtable and assigning it to package object
+    for pkg_id in list_package_ids:  # package_ids is a manually made list that contains the packages that should go on each truck
+        package = hash_table.lookup(pkg_id) # looking up the package id in the hashtable and assigning it to a package variable.
         if package is not None:
-            truck.add_package(package)## if found, then add the package to the truck
+            truck.add_package(package)## if found, then add the package to the truck's package list
             if package.id_package in (6, 25, 28, 32):  ## setting status for the delayed packages and for regular packages
                 package.status = "Delayed"
             else:
@@ -97,13 +96,15 @@ def update_package9_address(current_time):
         package_9.address_corrected = True  # to track if address 9 was corrected
         package_9.correction_time = current_time # storing correction time
 
+
+
 #Algorithm: Nearest Neighbor
 #Time Complexity: O(N^2) - due to the nested loops
 """The algorithm takes a truck start time, keeps a list of undelivered packages, repeatedly selects nearest address,
 updates each package's status, delivery time, and the truck's mileage. 
 The method returns the truck's arrival time back at the hub."""
 def nearest_neighbor(truck,start_time = timedelta(hours=8)):
-    undelivered_packages = list(truck.packages)  #create a list to track if a truck has any undelivered packages
+    undelivered_packages = list(truck.packages)  #create copy of the  list to track if a truck has any undelivered packages
     current_location = "4001 South 700 East"  #assign the starting location, the HUB
     current_time = start_time
 
@@ -122,7 +123,7 @@ def nearest_neighbor(truck,start_time = timedelta(hours=8)):
             nearest_package.status = "En route"  # status update: package on the way
 
             #calculating travel time
-            travel_time_minutes = (min_distance/18.0) * 60   #Calculate the distance in minutes based on the trucks speed - 18 mph
+            travel_time_minutes = (min_distance/truck.average_speed) * 60   #Calculate the distance in minutes based on the trucks speed - 18 mph
             travel_time = timedelta(minutes=travel_time_minutes)
 
             current_time += travel_time #updating current time
@@ -131,6 +132,7 @@ def nearest_neighbor(truck,start_time = timedelta(hours=8)):
             nearest_package.start_time = start_time # for status lookup
 
             truck.truck_miles += min_distance #saving truck miles
+            truck.mileage_log.append((current_time,truck.truck_miles)) # to use for printing truck miles at a given query time
 
             # assigning the nearest location as the current location
             current_location = nearest_package.address
@@ -143,8 +145,10 @@ def nearest_neighbor(truck,start_time = timedelta(hours=8)):
 
     distance_to_hub = get_distance(current_location, "4001 South 700 East") #calulating our return trip distance
     truck.truck_miles += distance_to_hub   #Tracking total miles traveled thus far.
-    travel_time_hub = timedelta(minutes=((distance_to_hub/18.0) * 60) )
+    travel_time_hub = timedelta(minutes=((distance_to_hub/truck.average_speed) * 60) )
     current_time += travel_time_hub #adding travel_time_hub to the current time
+    truck.mileage_log.append((current_time,truck.truck_miles))  # keeping a log of miles after each delivery to use for printing truck
+                                                                # miles at a given query time
     truck.return_time = current_time # setting truck return time
     return current_time  #returning the time the truck finished delivering, to be used for truck assignment : truck 3
 
@@ -178,6 +182,7 @@ def run_delivery():
     # Truck 1 starts at the default time 8:00am
     load_truck(truck1, truck1_packages)  # loading truck 1
     truck1_delivery = nearest_neighbor(truck1)  # running the nearest neighbor algorithm, truck 1 starting at default time 8:00 am
+
 
     # truck 2 starts at 09:05: waiting for the delayed packages to arrive at 9:05am
     truck2.start_time = timedelta(hours=9, minutes=5)
@@ -216,7 +221,8 @@ def print_package_report(id_package, query_time):
     # including special handling for delayed packages(IDs 6,25,28,32)
     if package.delivery_time is not None and query_time >= package.delivery_time:
         status= f"Delivered at {package.delivery_time}"
-    elif (package.id_package in (6,25,28,32) and  #making sure the delayed packages are marked and shown as delayed by using the delivery's start time as a measure
+    elif (package.id_package in (6,25,28,32) and  #making sure the delayed packages are marked and shown as--
+                                                  # --delayed by using the delivery's start time as a measure
           package.start_time is not None and
           query_time < package.start_time):
         status = "Delayed"
@@ -227,40 +233,69 @@ def print_package_report(id_package, query_time):
 
     # converting time objects to string for proper print display
     start_str = str(package.start_time)
-    deliver_str = str(package.delivery_time)
 
     # Printing report. Uses formatting for proper display
     print(f"{package.id_package:<5} {display_address:<40} {package.city:<20} {package.state:<10}"
-          f"{package.zip_code:<15} {package.delivery_deadline:<20} {start_str:<20} {status:<30} {deliver_str:<15}"
+          f"{package.zip_code:<15} {package.weight:<10} {package.delivery_deadline:<20} {start_str:<20} {status:<30} "
           f"{package.truck_id:<6}  ")
+
+
+
+
+#Time Complexity : O(n)
+# method to return the total mileage a truck has traveled as of a specific query time
+# uses a mileage log that is updated during the delivery algorithm
+def get_truck_mileage(truck, query_time):
+    latest_mileage = 0.0
+    #since the log is added in time order, the for loop find the last mileage before the query time.
+    for time, miles in truck.mileage_log:
+        if time <= query_time:
+            latest_mileage = miles
+        else:
+            break # to exit the loop once we find the latest time
+    return latest_mileage
+
 
 #Time Complexity: O(N) - due to the for to look up each package id and call to the report
 """A method to display report for all packages by looping through the package Id's 1-40 and calling the single package print
 method to print reports.
-The report also includes each truck's starting time, when the truck returned to hub, truck miles, and
-total miles traveled by all trucks"""
-def print_all_report(query_time, trucks_dict):
+The report also includes the total mileage traveled by all truck thus far"""
+def print_all_report(query_time, truck_dict):
     print(f"\n--- Printing all package statuses at Query time: {query_time}")
     print(
         f"{'ID':<5} {'Address':<40} {'city':<20} {'State':<10}"
-        f"{'Zip-Code':<15} {'Deadline':<20} {'Departure Time':<20} {'Status':<30} {'Delivery Time':<15}"
+        f"{'Zip-Code':<15} {'Weight':<10} {'Deadline':<20} {'Departure Time':<20} {'Status':<30}"
         f"{'Truck':<6}  "
     )
 
-    for id_package in range(1, 41):  #for packages with id 1-40
+    for id_package in range(1, 41): # for packages with id 1-40
         print_package_report(id_package, query_time) # call the package report method for each package
 
+    #Calculate dynamic mileage as of query_time
+    mile1 = get_truck_mileage(truck_dict[1], query_time)
+    mile2 = get_truck_mileage(truck_dict[2], query_time)
+    mile3 = get_truck_mileage(truck_dict[3], query_time)
 
-    # Adding print statements to display each trucks start time, when it returned to hub and truck miles
-    # the trucks_dict passed from the run_delivery method is used to access the truck attributes
-    print(f"\nTruck 1 Starting Time: {trucks_dict[1].start_time} and returned to hub at : {trucks_dict[1].return_time}")
+    total_miles = mile1 + mile2 + mile3
+
+    print(f"\n Total miles Traveled by all trucks as of {query_time} is {total_miles:.2f} miles.")
+
+
+
+#Time Complexity O(1)
+"""print report to display each truck's start time, when it returned to hub and truck miles
+the trucks_dict passed from the run_delivery method is used to access the truck attributes"""
+def print_truck_report(trucks_dict):
+
+    print("\n================Truck Summary Report====================")
+    print(f"\nTruck 1 started at: {trucks_dict[1].start_time} and returned to hub at : {trucks_dict[1].return_time}")
     print(f"Truck 1 Miles: {trucks_dict[1].truck_miles:.2f}")
 
 
-    print(f"\nTruck 2 Starting Time: {trucks_dict[2].start_time} and returned to hub at : {trucks_dict[2].return_time}")
+    print(f"\nTruck 2 started at: {trucks_dict[2].start_time} and returned to hub at : {trucks_dict[2].return_time}")
     print(f"Truck 2 Miles: {trucks_dict[2].truck_miles:.2f}")
 
-    print(f"\nTruck 3 Starting Time: {trucks_dict[3].start_time} and returned to hub at : {trucks_dict[3].return_time}")
+    print(f"\nTruck 3 started at: {trucks_dict[3].start_time} and returned to hub at : {trucks_dict[3].return_time}")
     print(f"Truck 3 Miles: {trucks_dict[3].truck_miles:.2f}")
 
 
@@ -270,7 +305,6 @@ def print_all_report(query_time, trucks_dict):
 
 
 if __name__ == "__main__":
-
 
     print("\n\n====================Delivery Tracking System======================")
     print("\n\nRunning Delivery Simulation")
@@ -283,11 +317,12 @@ if __name__ == "__main__":
     print("\n\nPlease choose a report to view: Enter numbers only")
     print("\n1. View status report for all packages")
     print("\n2. View status report for a specific package at a specific time")
-    print("\n3. Enter 3 to exit the system\n")
+    print("\n3. View Truck Summary including total mileage")
+    print("\n4. Enter 4 to exit the system\n")
 
     while True: # while loop to allow for dynamic display of menu   Time-Complexity - O(N)
         # taking user
-        report_choice = input("\n\n\nEnter your choice to view report 1,2, or exit:  \n\n\n").strip()
+        report_choice = input("\n\n\nEnter your choice:  \n\n\n").strip()
 
         if report_choice == "1":
             try:    #Using try and except to handle validation for proper time entry
@@ -322,14 +357,16 @@ if __name__ == "__main__":
 
                 print(  # print format
                     f"{'ID':<5} {'Address':<40} {'city':<20} {'State':<10}"
-                    f"{'Zip-Code':<15} {'Deadline':<20} {'Departure Time':<20} {'Status':<30} {'Delivery Time':<15}"
+                    f"{'Zip-Code':<15} {'Weight':<10} {'Deadline':<20} {'Departure Time':<20} {'Status':<30} "
                     f"{'Truck':<6}  "
                 )
                 print_package_report(package_id, time_input) # calling single package report print method
             except ValueError:
                 print("\n\n***INVALID INPUT: Please enter valid numbers***\n\n")
                 continue
-        elif report_choice == "3":   # exit
+        elif report_choice == "3":
+            print_truck_report(trucks)  # printing truck report to show delivery has successfully finished
+        elif report_choice == "4":   # exit
             print("\nThank you for using the delivery tracking system")
             break
         else:

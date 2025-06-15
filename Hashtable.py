@@ -18,7 +18,10 @@ class Hashtable:
     def insert(self, key, value):
         index = self.hash(key)   #calling the hash function to calculate an index using the id_package
         bucket = self.hash_list[index]
-        if bucket is None:   #if the bucket at index is empty, create an empty list at that index #this is for separate chaining. If two package objects map to the same index, the value gets appended to the list.
+
+        """if the bucket at index is empty, create an empty list at that index #this is for separate chaining. 
+        If two package objects map to the same index, the value gets appended to the list."""
+        if bucket is None:
             bucket = []    #creating a new list
             self.hash_list[index] = bucket  # connecting the hashtable to the new list
         # append the package key - id_package and value - package at the end of the list at index
